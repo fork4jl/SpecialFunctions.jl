@@ -1,125 +1,137 @@
 # SPDX-License-Identifier: BSD-3-Clause OR MIT
 
+
 """
-    airy(z::ComplexF64, id::Int, kode::Int)
+    airy(z::Complex{Float64}, id::Int, kode::Int)
 
-COMPUTE AIRY FUNCTIONS AI(Z) AND DAI(Z) FOR COMPLEX Z.
+Compute Airy functions `Ai(z)` or its derivative `DAi(z)` for complex `z`.
 
-ON KODE=1, ZAIRY COMPUTES THE COMPLEX AIRY FUNCTION AI(Z) OR
-ITS DERIVATIVE DAI(Z)/DZ ON ID=0 OR ID=1 RESPECTIVELY. ON
-KODE=2, A SCALING OPTION CEXP(ZTA)*AI(Z) OR CEXP(ZTA)*
-DAI(Z)/DZ IS PROVIDED TO REMOVE THE EXPONENTIAL DECAY IN
--PI/3.LT.ARG(Z).LT.PI/3 AND THE EXPONENTIAL GROWTH IN
-PI/3.LT.ABS(ARG(Z)).LT.PI WHERE ZTA=(2/3)*Z*CSQRT(Z).
+On `kode=1`, airy computes the complex Airy function `Ai(z)` or
+its derivative `dAi(z)/dz` on `id=0` or `id=1` respectively. 
 
-WHILE THE AIRY FUNCTIONS AI(Z) AND DAI(Z)/DZ ARE ANALYTIC IN
-THE WHOLE Z PLANE, THE CORRESPONDING SCALED FUNCTIONS DEFINED
-FOR KODE=2 HAVE A CUT ALONG THE NEGATIVE REAL AXIS.
-DEFINITIONS AND NOTATION ARE FOUND IN THE NBS HANDBOOK OF
-MATHEMATICAL FUNCTIONS (REF. 1).
+On `kode=2`, a scaling option `exp(ζ) * Ai(z)` or 
+`exp(ζ) * dAi(z)/dz` is provided to remove the exponential decay in
+`-π/3 < arg(z) < π/3` and the exponential growth in
+`π/3 < abs(arg(z)) < π` where `ζ=(2/3) * z * sqrt(z)`
 
+While the Airy functions `Ai(z)` and `dAi(z)/dz` are analytic in
+the whole `Z` plane, the corresponding scaled functions defined
+for `kode=2` have a cut along the negative real axis.
+Definitions and notation are found in the NBS Handbook of
+Mathematical Functions (Abramowitz and Stegun, 1964).
 
 # Arguments
-- `z` Complex Number
-- `id`: ORDER OF DERIVATIVE
-    id=0, or id=1
-- `kode`: INDICATE THE SCALING OPTION
-    kode=1, 
-        AI=AI(Z)                ON ID=0 OR
-        AI=DAI(Z)/DZ            ON ID=1
-    kode=2, 
-        AI=CEXP(ZTA)*AI(Z)      ON ID=0 OR
-        AI=CEXP(ZTA)*DAI(Z)/DZ  ON ID=1 WHERE
-        ZTA=(2/3)*Z*CSQRT(Z)
+## Input
+- `z::Complex{Float64}`: Complex number to compute.
+- `id::Int`: Order of Derivative.
+    - `id=0`: Compute Airy functions, `Ai(z)`
+    - `id=1`: Compute first derivative of Airy function, `dAi(z)/dz`
+    - Other values: Return error
+- `kode::Int`: Indicate the scaling option.
+    - `kode=1`: No scaling.
+    - `kode=2`: Apply scaling factor `exp(ζ)` to output,
+        where `ζ = (2/3) * z * sqrt(z)`
+    - Other values: Return error
 
-# Return
-COMPLEX ANSWER DEPENDING ON THE CHOICES FOR ID AND KODE
+## Output
+Complex answer depending on the choices for id and kode:
+- `kode=1`
+    - `id=0`: return `Ai(z)`
+    - `id=1`: return `dAi(z)/dz`
+- `kode=2`, where `ζ = (2/3) * z * sqrt(z)`
+    - `id=0`: return `exp(ζ) * Ai(z)`
+    - `id=1`: return `exp(ζ) * dAi(z)/dz`
 
 
 # Examples
+```jldoctest
+julia> AMOS.airy(0.0 + 0.0im, 0, 1)
+0.3550280538878172
 
+julia> AMOS.airy(0.0 + 0.0im, 1, 1)
+-0.2588194037928068
+
+julia> AMOS.airy(0.0 + 0.0im, 0, 2)
+0.3550280538878172
+
+julia> AMOS.airy(0.0 + 0.0im, 1, 2)
+-0.2588194037928068
+```
 
 
 # Extended help
 
 ## AMOS Prologue
-* BEGIN PROLOGUE  ZAIRY
-* DATE WRITTEN   830501   (YYMMDD)
-* REVISION DATE  890801   (YYMMDD)
-* CATEGORY NO.  B5K
-* KEYWORDS  AIRY FUNCTION,BESSEL FUNCTIONS OF ORDER ONE THIRD
-* AUTHOR  AMOS, DONALD E., SANDIA NATIONAL LABORATORIES
+- Date Written: 1983/05/01 (YYYY/MM/DD)
+- Revision Date: 1989/08/01 (YYYY/MM/DD)
+- Category No.: B5k
+- Keywords: Airy Function, Bessel Functions Of Order One Third
+- Author: Amos, Donald E., Sandia National Laboratories
 
 ## Long Description
-AI AND DAI ARE COMPUTED FOR CABS(Z).GT.1.0 FROM THE K BESSEL
-FUNCTIONS BY
+ai and dai are computed for cabs(z).gt.1.0 from the k bessel
+functions by
 
-AI(Z)=C*SQRT(Z)*K(1/3,ZTA) , DAI(Z)=-C*Z*K(2/3,ZTA)
-                C=1.0/(PI*SQRT(3.0))
-                ZTA=(2/3)*Z**(3/2)
+    Ai(z)=c*sqrt(z)*k(1/3,zta) , dAi(z)=-c*z*k(2/3,zta)
+                    c=1.0/(pi*sqrt(3.0))
+                    zta=(2/3)*z**(3/2)
 
-WITH THE POWER SERIES FOR CABS(Z).LE.1.0.
+with the power series for cabs(z).le.1.0.
 
-IN MOST COMPLEX VARIABLE COMPUTATION, ONE MUST EVALUATE ELE-
-MENTARY FUNCTIONS. WHEN THE MAGNITUDE OF Z IS LARGE, LOSSES
-OF SIGNIFICANCE BY ARGUMENT REDUCTION OCCUR. CONSEQUENTLY, IF
-THE MAGNITUDE OF ZETA=(2/3)*Z**1.5 EXCEEDS U1=SQRT(0.5/UR),
-THEN LOSSES EXCEEDING HALF PRECISION ARE LIKELY AND AN ERROR
-FLAG IERR=3 IS TRIGGERED WHERE UR=DMAX1(D1MACH(4),1.0D-18) IS
-DOUBLE PRECISION UNIT ROUNDOFF LIMITED TO 18 DIGITS PRECISION.
-ALSO, IF THE MAGNITUDE OF ZETA IS LARGER THAN U2=0.5/UR, THEN
-ALL SIGNIFICANCE IS LOST AND IERR=4. IN ORDER TO USE THE INT
-FUNCTION, ZETA MUST BE FURTHER RESTRICTED NOT TO EXCEED THE
-LARGEST INTEGER, U3=I1MACH(9). THUS, THE MAGNITUDE OF ZETA
-MUST BE RESTRICTED BY MIN(U2,U3). ON 32 BIT MACHINES, U1,U2,
-AND U3 ARE APPROXIMATELY 2.0E+3, 4.2E+6, 2.1E+9 IN SINGLE
-PRECISION ARITHMETIC AND 1.3E+8, 1.8E+16, 2.1E+9 IN DOUBLE
-PRECISION ARITHMETIC RESPECTIVELY. THIS MAKES U2 AND U3 LIMIT-
-ING IN THEIR RESPECTIVE ARITHMETICS. THIS MEANS THAT THE MAG-
-NITUDE OF Z CANNOT EXCEED 3.1E+4 IN SINGLE AND 2.1E+6 IN
-DOUBLE PRECISION ARITHMETIC. THIS ALSO MEANS THAT ONE CAN
-EXPECT TO RETAIN, IN THE WORST CASES ON 32 BIT MACHINES,
-NO DIGITS IN SINGLE PRECISION AND ONLY 7 DIGITS IN DOUBLE
-PRECISION ARITHMETIC. SIMILAR CONSIDERATIONS HOLD FOR OTHER
-MACHINES.
+in most complex variable computation, one must evaluate ele-
+mentary functions. when the magnitude of z is large, losses
+of significance by argument reduction occur. consequently, if
+the magnitude of zeta=(2/3)*z**1.5 exceeds u1=sqrt(0.5/ur),
+then losses exceeding half precision are likely and an error
+flag ierr=3 is triggered where ur=dmax1(d1mach(4),1.0d-18) is
+double precision unit roundoff limited to 18 digits precision.
+also, if the magnitude of zeta is larger than u2=0.5/ur, then
+all significance is lost and ierr=4. in order to use the int
+function, zeta must be further restricted not to exceed the
+largest integer, u3=i1mach(9). thus, the magnitude of zeta
+must be restricted by min(u2,u3). on 32 bit machines, u1,u2,
+and u3 are approximately 2.0e+3, 4.2e+6, 2.1e+9 in single
+precision arithmetic and 1.3e+8, 1.8e+16, 2.1e+9 in double
+precision arithmetic respectively. this makes u2 and u3 limit-
+ing in their respective arithmetics. this means that the mag-
+nitude of z cannot exceed 3.1e+4 in single and 2.1e+6 in
+double precision arithmetic. this also means that one can
+expect to retain, in the worst cases on 32 bit machines,
+no digits in single precision and only 7 digits in double
+precision arithmetic. similar considerations hold for other
+machines.
 
-THE APPROXIMATE RELATIVE ERROR IN THE MAGNITUDE OF A COMPLEX
-BESSEL FUNCTION CAN BE EXPRESSED BY P*10**S WHERE P=MAX(UNIT
-ROUNDOFF,1.0E-18) IS THE NOMINAL PRECISION AND 10**S REPRE-
-SENTS THE INCREASE IN ERROR DUE TO ARGUMENT REDUCTION IN THE
-ELEMENTARY FUNCTIONS. HERE, S=MAX(1,ABS(LOG10(CABS(Z))),
-ABS(LOG10(FNU))) APPROXIMATELY (I.E. S=MAX(1,ABS(EXPONENT OF
-CABS(Z),ABS(EXPONENT OF FNU)) ). HOWEVER, THE PHASE ANGLE MAY
-HAVE ONLY ABSOLUTE ACCURACY. THIS IS MOST LIKELY TO OCCUR WHEN
-ONE COMPONENT (IN ABSOLUTE VALUE) IS LARGER THAN THE OTHER BY
-SEVERAL ORDERS OF MAGNITUDE. IF ONE COMPONENT IS 10**K LARGER
-THAN THE OTHER, THEN ONE CAN EXPECT ONLY MAX(ABS(LOG10(P))-K,
-0) SIGNIFICANT DIGITS; OR, STATED ANOTHER WAY, WHEN K EXCEEDS
-THE EXPONENT OF P, NO SIGNIFICANT DIGITS REMAIN IN THE SMALLER
-COMPONENT. HOWEVER, THE PHASE ANGLE RETAINS ABSOLUTE ACCURACY
-BECAUSE, IN COMPLEX ARITHMETIC WITH PRECISION P, THE SMALLER
-COMPONENT WILL NOT (AS A RULE) DECREASE BELOW P TIMES THE
-MAGNITUDE OF THE LARGER COMPONENT. IN THESE EXTREME CASES,
-THE PRINCIPAL PHASE ANGLE IS ON THE ORDER OF +P, -P, PI/2-P,
-OR -PI/2+P.
+the approximate relative error in the magnitude of a complex
+bessel function can be expressed by p*10**s where p=max(unit
+roundoff,1.0e-18) is the nominal precision and 10**s repre-
+sents the increase in error due to argument reduction in the
+elementary functions. here, s=max(1,abs(log10(cabs(z))),
+abs(log10(fnu))) approximately (i.e. s=max(1,abs(exponent of
+cabs(z),abs(exponent of fnu)) ). however, the phase angle may
+have only absolute accuracy. this is most likely to occur when
+one component (in absolute value) is larger than the other by
+several orders of magnitude. if one component is 10**k larger
+than the other, then one can expect only max(abs(log10(p))-k,
+0) significant digits; or, stated another way, when k exceeds
+the exponent of p, no significant digits remain in the smaller
+component. however, the phase angle retains absolute accuracy
+because, in complex arithmetic with precision p, the smaller
+component will not (as a rule) decrease below p times the
+magnitude of the larger component. in these extreme cases,
+the principal phase angle is on the order of +p, -p, pi/2-p,
+or -pi/2+p.
 
 ## References
-- [`openspecfun/amos/zairy.f`](https://github.com/JuliaMath/openspecfun/blob/v0.5.6/amos/zairy.f)
-- [`scipy/scipy/special/_amos.c:amos_airy`](https://github.com/scipy/scipy/blob/b882f1b7ebe55e534f29a8d68a54e4ecd30aeb1a/scipy/special/_amos.c#L650-L994)
-- HANDBOOK OF MATHEMATICAL FUNCTIONS BY M. ABRAMOWITZ
-    AND I. A. STEGUN, NBS AMS SERIES 55, U.S. DEPT. OF
-    COMMERCE, 1955.
-- COMPUTATION OF BESSEL FUNCTIONS OF COMPLEX ARGUMENT
-    AND LARGE ORDER BY D. E. AMOS, SAND83-0643, MAY, 1983
-- A SUBROUTINE PACKAGE FOR BESSEL FUNCTIONS OF A COMPLEX
-    ARGUMENT AND NONNEGATIVE ORDER BY D. E. AMOS, SAND85-
-    1018, MAY, 1985
-- A PORTABLE PACKAGE FOR BESSEL FUNCTIONS OF A COMPLEX
-    ARGUMENT AND NONNEGATIVE ORDER BY D. E. AMOS, TRANS.
-    MATH. SOFTWARE, 1986
+- OpenSpecfun (fortran): [`openspecfun/amos/zairy.f`](https://github.com/JuliaMath/openspecfun/blob/v0.5.6/amos/zairy.f)
+- Scipy (C): [`scipy/scipy/special/_amos.c:amos_airy`](https://github.com/scipy/scipy/blob/b882f1b7ebe55e534f29a8d68a54e4ecd30aeb1a/scipy/special/_amos.c#L650-L994)
+- Abramowits, M., & Stegun, I. A. (1964). Handbook of Mathematical Functions AMS55. National Bureau of Standards.
+- Amos, D. E. (1983). Computation of Bessel functions of complex argument and large order (No. SAND-83-0643). Sandia National Lab., Albuquerque, NM (United States).
+- Amos, D. E. (1985). Subroutine package for Bessel functions of a complex argument and nonnegative order (No. SAND-85-1018). Sandia National Labs., Albuquerque, NM (United States).
+- Amos, D. E. (1986). Algorithm 644: A portable package for Bessel functions of a complex argument and nonnegative order. ACM Transactions on Mathematical Software (TOMS), 12(3), 265-273.
 
 ## Implementation
-ROUTINES CALLED  ZACAI,ZBKNU,AZEXP,AZSQRT,I1MACH,D1MACH
+- Routines called: `acai`, `bknu`
+- Constants used: `D1_MACH`, `I1_MACH`
 """
 function airy(z::ComplexF64, id::Int, kode::Int)
     # aa, ad, ak, alim, atrm, az, az3, bk, ck, dig, dk, d1, d2, elim, fid, fnu, rl, r1m5, sfac, tol,  bb, alaz = 0.0
