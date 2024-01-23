@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause OR MIT
 
-
 """
     airy(z::Complex{Float64}, id::Int, kode::Int)
 
@@ -135,11 +134,13 @@ or `-pi/2+p`.
 - Constants used: `D1_MACH`, `I1_MACH`
 """
 function airy(z::ComplexF64, id::Int, kode::Int)
-    # aa, ad, ak, alim, atrm, az, az3, bk, ck, dig, dk, d1, d2, elim, fid, fnu, rl, r1m5, sfac, tol,  bb, alaz = 0.0
     TTH = 2.0 / 3.0
-    GAMMA_C1 = 0.35502805388781723926  # 1/(Gamma(2/3) * 3**(2/3))
-    GAMMA_C2 = 0.25881940379280679841  # 1/(Gamma(1/3) * 3**(1/3))
-    COEF = 0.18377629847393068317  # 1 / (sqrt(3) * PI)
+    "1/(Gamma(2/3) * 3^(2/3))"
+    GAMMA_C1 = 0.35502805388781723926
+    "1/(Gamma(1/3) * 3^(1/3))"
+    GAMMA_C2 = 0.25881940379280679841
+    "1 / (sqrt(3) * PI)"
+    COEF = 0.18377629847393068317
 
     cy = [ 0.0 + 0.0im ]
     zta = 0.0 + 0.0im
@@ -165,9 +166,9 @@ function airy(z::ComplexF64, id::Int, kode::Int)
     fid = float(id)
 
     if az <= 1.0
-        #
-        # POWER SERIES FOR ABS(Z) <= 1.
-        #
+        """
+        Power series for `abs(z) <= 1.0`
+        """
         s1 = 1.0 + 0.0im
         s2 = 1.0 + 0.0im
         if az < tol
@@ -259,20 +260,22 @@ function airy(z::ComplexF64, id::Int, kode::Int)
     end
 
     #= 70 =#
-    #
-    # CASE FOR abs(Z) > 1.0
-    #
+    """
+    Case for `abs(z) > 1.0`
+    """
     fnu = (1.0 + fid) / 3.0
-    #
-    # SET PARAMETERS RELATED TO MACHINE CONSTANTS.
-    # TOL IS THE APPROXIMATE UNIT ROUNDOFF LIMITED TO 1.0E-18.
-    # ELIM IS THE APPROXIMATE EXPONENTIAL OVER- AND UNDERFLOW LIMIT.
-    # EXP(-ELIM) < EXP(-ALIM)=EXP(-ELIM)/TOL    AND
-    # EXP(ELIM) > EXP(ALIM)=EXP(ELIM)*TOL       ARE INTERVALS NEAR
-    # UNDERFLOW AND OVERFLOW LIMITS WHERE SCALED ARITHMETIC IS DONE.
-    # RL IS THE LOWER BOUNDARY OF THE ASYMPTOTIC EXPANSION FOR LARGE Z.
-    # DIG = NUMBER OF BASE 10 DIGITS IN TOL = 10**(-DIG).
-    #
+    """
+    Set parameters related to machine constants.
+
+    - `tol` is the approximate unit roundoff limited to `1.0e-18`.
+    - `elim` is the approximate exponential over- and underflow limit.
+            exp(-elim) < exp(-alim) = exp(-elim)/tol    and
+            exp( elim) > exp( alim) = exp( elim)*tol      
+        are intervals near underflow and overflow limits
+        where scaled arithmetic is done.
+    - `rl` is the lower boundary of the asymptotic expansion for large `z`.
+    - `dig` = number of base 10 digits in `tol = 10^(-dig)`.
+    """
     k1 = trunc(Int, I1_MACH[15])
     k2 = trunc(Int, I1_MACH[16])
     r1m5 = D1_MACH[5]
@@ -286,9 +289,9 @@ function airy(z::ComplexF64, id::Int, kode::Int)
     rl = 1.2 * dig + 3.0
     alaz = log(az)
 
-    #
-    # TEST FOR PROPER RANGE
-    #
+    """
+    Test for proper range
+    """
     aa = 0.5 / tol
     bb = I1_MACH[9] * 0.5
     aa = min(aa, bb)
@@ -310,9 +313,9 @@ function airy(z::ComplexF64, id::Int, kode::Int)
     csq = sqrt(z)
     zta = z * csq * TTH
 
-    #
-    # RE(ZTA) <= 0 WHEN RE(Z) < 0, ESPECIALLY WHEN IM(Z) IS SMALL
-    #
+    """
+    `real(zta) <= 0` when `real(z) < 0`, especially when `imag(z)` is small
+    """
     iflag = 0
     sfac = 1.0
     ak = imag(zta)
@@ -329,9 +332,9 @@ function airy(z::ComplexF64, id::Int, kode::Int)
     aa = real(zta)
     if (aa < 0.0) || (real(z) <= 0.0)
         if kode != 2
-            #
-            # OVERFLOW TEST
-            #
+            """
+            Overflow test
+            """
             if aa <= -alim
                 aa = -aa + 0.25 * alaz
                 iflag = 1
@@ -349,9 +352,9 @@ function airy(z::ComplexF64, id::Int, kode::Int)
         end
 
         #= 100 =#
-        #
-        # CBKNU AND CACON RETURN EXP(ZTA)*K(FNU,ZTA) ON KODE=2
-        #
+        """
+        `bknu` and `acai` return `exp(zta) * K(fnu,zta)` on `kode=2`
+        """
         mr = 1
         if imag(z) < 0.0
             mr = -1
@@ -372,14 +375,14 @@ function airy(z::ComplexF64, id::Int, kode::Int)
                 return 0.0
             end
         end
-    
+
         nz += nn
     else
         #= 110 =#
         if kode != 2
-            #
-            # OVERFLOW TEST
-            #
+            """
+            Overflow test
+            """
             if aa >= alim
                 aa = -aa - 0.25 * alaz
                 iflag = 2
