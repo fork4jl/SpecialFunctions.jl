@@ -4,7 +4,7 @@
 """
     airy(z::Complex{Float64}, id::Int, kode::Int)
 
-Compute Airy functions `Ai(z)` or its derivative `DAi(z)` for complex `z`.
+Compute Airy functions `Ai(z)` or its derivative `dAi(z)` for complex `z`.
 
 On `kode=1`, airy computes the complex Airy function `Ai(z)` or
 its derivative `dAi(z)/dz` on `id=0` or `id=1` respectively. 
@@ -69,57 +69,58 @@ julia> AMOS.airy(0.0 + 0.0im, 1, 2)
 - Author: Amos, Donald E., Sandia National Laboratories
 
 ## Long Description
-ai and dai are computed for cabs(z).gt.1.0 from the k bessel
+`Ai(z)` and `dAi(z)` are computed for `abs(z) > 1.0` from the K bessel
 functions by
 
-    Ai(z)=c*sqrt(z)*k(1/3,zta) , dAi(z)=-c*z*k(2/3,zta)
-                    c=1.0/(pi*sqrt(3.0))
-                    zta=(2/3)*z**(3/2)
+     Ai(z) =  C * sqrt(z) * K(1/3,zta),
+    dAi(z) = -C * z * K(2/3,zta)
+              C = 1.0 / (pi*sqrt(3.0))
+            zta = (2/3) * z^(3/2)
 
-with the power series for cabs(z).le.1.0.
+with the power series for `abs(z) <= 1.0`.
 
-in most complex variable computation, one must evaluate ele-
-mentary functions. when the magnitude of z is large, losses
-of significance by argument reduction occur. consequently, if
-the magnitude of zeta=(2/3)*z**1.5 exceeds u1=sqrt(0.5/ur),
+In most complex variable computation, one must evaluate elementary
+functions.  When the magnitude of `z` is large, losses
+of significance by argument reduction occur.  Consequently, if
+the magnitude of `zeta = (2/3) * z^1.5` exceeds `u1 = sqrt(0.5/ur)`,
 then losses exceeding half precision are likely and an error
-flag ierr=3 is triggered where ur=dmax1(d1mach(4),1.0d-18) is
+flag `ierr=3` is triggered where `ur = dmax1(d1mach(4),1.0d-18)` is
 double precision unit roundoff limited to 18 digits precision.
-also, if the magnitude of zeta is larger than u2=0.5/ur, then
-all significance is lost and ierr=4. in order to use the int
+Also, if the magnitude of `zeta` is larger than `u2 = 0.5/ur`, then
+all significance is lost and `ierr=4`.  In order to use the int
 function, zeta must be further restricted not to exceed the
-largest integer, u3=i1mach(9). thus, the magnitude of zeta
-must be restricted by min(u2,u3). on 32 bit machines, u1,u2,
-and u3 are approximately 2.0e+3, 4.2e+6, 2.1e+9 in single
-precision arithmetic and 1.3e+8, 1.8e+16, 2.1e+9 in double
-precision arithmetic respectively. this makes u2 and u3 limit-
-ing in their respective arithmetics. this means that the mag-
-nitude of z cannot exceed 3.1e+4 in single and 2.1e+6 in
-double precision arithmetic. this also means that one can
+largest integer, `u3=i1mach(9)`.  Thus, the magnitude of zeta
+must be restricted by `min(u2,u3)`.  On 32 bit machines, `u1`, `u2`,
+and `u3` are approximately `2.0e+3`, `4.2e+6`, `2.1e+9` in single
+precision arithmetic and `1.3e+8`, `1.8e+16`, `2.1e+9` in double
+precision arithmetic respectively.  This makes `u2` and `u3` limiting
+in their respective arithmetics.  This means that the magnitude
+of `z` cannot exceed `3.1e+4` in single and `2.1e+6` in
+double precision arithmetic.  This also means that one can
 expect to retain, in the worst cases on 32 bit machines,
 no digits in single precision and only 7 digits in double
-precision arithmetic. similar considerations hold for other
+precision arithmetic.  Similar considerations hold for other
 machines.
 
-the approximate relative error in the magnitude of a complex
-bessel function can be expressed by p*10**s where p=max(unit
-roundoff,1.0e-18) is the nominal precision and 10**s repre-
-sents the increase in error due to argument reduction in the
-elementary functions. here, s=max(1,abs(log10(cabs(z))),
-abs(log10(fnu))) approximately (i.e. s=max(1,abs(exponent of
-cabs(z),abs(exponent of fnu)) ). however, the phase angle may
-have only absolute accuracy. this is most likely to occur when
+The approximate relative error in the magnitude of a complex
+bessel function can be expressed by `p*10^s` where `p = max(unit
+roundoff,1.0e-18)` is the nominal precision and `10^s` represents
+the increase in error due to argument reduction in the
+elementary functions.  Here, `s = max(1,abs(log10(abs(z)))`,
+`abs(log10(fnu)))` approximately (i.e. `s=max(1,abs(exponent of
+abs(z),abs(exponent of fnu))` ).  However, the phase angle may
+have only absolute accuracy.  This is most likely to occur when
 one component (in absolute value) is larger than the other by
-several orders of magnitude. if one component is 10**k larger
-than the other, then one can expect only max(abs(log10(p))-k,
-0) significant digits; or, stated another way, when k exceeds
-the exponent of p, no significant digits remain in the smaller
-component. however, the phase angle retains absolute accuracy
-because, in complex arithmetic with precision p, the smaller
-component will not (as a rule) decrease below p times the
-magnitude of the larger component. in these extreme cases,
-the principal phase angle is on the order of +p, -p, pi/2-p,
-or -pi/2+p.
+several orders of magnitude.  If one component is `10^k` larger
+than the other, then one can expect only `max(abs(log10(p))-k,0)`
+significant digits; or, stated another way, when `k` exceeds
+the exponent of `p`, no significant digits remain in the smaller
+component.  However, the phase angle retains absolute accuracy
+because, in complex arithmetic with precision `p`, the smaller
+component will not (as a rule) decrease below `p` times the
+magnitude of the larger component.  In these extreme cases,
+the principal phase angle is on the order of `+p`, `-p`, `pi/2-p`,
+or `-pi/2+p`.
 
 ## References
 - OpenSpecfun (fortran): [`openspecfun/amos/zairy.f`](https://github.com/JuliaMath/openspecfun/blob/v0.5.6/amos/zairy.f)
@@ -259,7 +260,7 @@ function airy(z::ComplexF64, id::Int, kode::Int)
 
     #= 70 =#
     #
-    # CASE FOR CABS(Z).GT.1.0
+    # CASE FOR abs(Z) > 1.0
     #
     fnu = (1.0 + fid) / 3.0
     #
@@ -310,7 +311,7 @@ function airy(z::ComplexF64, id::Int, kode::Int)
     zta = z * csq * TTH
 
     #
-    # RE(ZTA).LE.0 WHEN RE(Z).LT.0, ESPECIALLY WHEN IM(Z) IS SMALL
+    # RE(ZTA) <= 0 WHEN RE(Z) < 0, ESPECIALLY WHEN IM(Z) IS SMALL
     #
     iflag = 0
     sfac = 1.0
