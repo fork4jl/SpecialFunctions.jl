@@ -71,30 +71,46 @@ end
 # ==== Test Set ====#
 
 @testset "AMOS.uchk" begin
-    function tuchk(y::ComplexF64, ascle::Float64, tol::Float64)
-        @test AMOS.uchk(y,ascle,tol) == AMOS._uchk(y,ascle,tol)
+    special_inputs = [
+        #= ( yr,yi, ascle, tol ) =#
+        # min > ascle
+        ( 2.0,3.0, 1e-6, 1.0),
+        # min <= ascle && max < (min/tol)
+        ( 1e-8,1e-9, 1e-6, 1e-3),
+        # min <= ascle && max >= (min/tol)
+        ( 1e-8,1e-13, 1e-6, 1e-3),
+    ]
+    for (yr,yi,ascle,tol) in special_inputs
+        for y in [
+            complex(-yr, yi), complex( yr, yi),
+            complex(-yr,-yi), complex( yr,-yi),
+        ]
+            @test AMOS.uchk(y,ascle,tol) == AMOS._uchk(y,ascle,tol)
+        end
     end
 
-    test_tol = [
+    test_y = [
         SPECIAL_FLOAT32...,
-        # 1e-0 ~ 1e-16
-        [ 10.0^i for i in 0:-1:-16 ]...,
+        [ 10.0^i for i in 0:16 ]...,
     ]
     test_ascle = [
-        test_tol...,
+        [ 10.0^i for i in 0:-1:-16 ]...,
     ]
-    test_y = [
-        complex(SPECIAL_FLOAT32)...,
-        # [0, 1)+i[0, 1)
-        rand(ComplexF64, 10)...,
-        # (1+im) * 1e0 ~ 1e16
-        [ (1.0+1im)*10^i for i in 0:16 ]...,
+    test_tol = [
+        0.0,  # test divide by zero
+        [ 10.0^i for i in 6:-1:-6 ]...,
     ]
 
-    for tol in gen_neg_inv(test_tol),
-        ascle in gen_neg_inv(test_ascle),
-        y in gen_phase4(test_y)
-        tuchk(y, ascle, tol)
+    for tol in test_tol,
+        ascle in test_ascle,
+        yr in test_y
+        for y in [
+            complex(yr, 2.),
+            complex(2., yr),
+            complex(yr, yr),
+        ]
+            @test AMOS.uchk(y,ascle,tol) == AMOS._uchk(y,ascle,tol)
+        end
     end
 end
 
