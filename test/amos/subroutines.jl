@@ -114,6 +114,7 @@ end
     end
 end
 
+
 "Pure julia log(gamma(z))"
 function gammalog(z::Float64)
     if z > 0.0
@@ -127,6 +128,39 @@ function gammalog(z::Float64)
 end
 
 @testset "AMOS.gammaln" begin
+    special_inputs = Float64[
+        #= if z > 0.0 =#
+        #  z <= 0.0
+        -1.0, 0.0,
+    
+        #  z > 0.0
+        #= if z <= 101.0 =#
+        #  z in Int(0, 100]
+        1:100...,
+        #  z in Float64(100, 101]
+        100 + rand(),
+
+        #= if z < zmin,  zmin=7.0 =#
+        #  z < zmin
+        3.14,
+        #  z >= zmin
+        7.0, 7.1,
+
+        #= if zp >= wdtol,  wdtol=2.2e-16 =#
+        1e-16, 1e-10,
+        
+        #= if 0.0 == zinc =#
+        #  when z > zmin(=7.0), zinc=0
+        8.1,
+        π * 100,
+        7 + rand()*10.0^rand(0:300),  # (7, 1e300]
+        #  when z in (0.0, 7.0], zinc != 0 
+        rand() * 7,
+    ]
+    for z in special_inputs
+        @test AMOS.gammaln(z) === AMOS._gammaln(z)
+    end
+
     test_y = [
         SPECIAL_FLOAT32...,
         # [0, 1)
