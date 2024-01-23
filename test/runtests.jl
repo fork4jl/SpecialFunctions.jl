@@ -26,7 +26,7 @@ checktol(err::Float64) = err ≤ 1e-13
 tests = [
 # AMOS test
     "amos/const",
-    "amos/helper",
+    "amos/subroutines",
 #
     "bessel",
     "beta_inc",
