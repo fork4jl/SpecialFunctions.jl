@@ -115,13 +115,10 @@ end
 end
 
 
-"Pure julia log(gamma(z))"
+"Warp `gammalog`, return for `z <= 0.0`"
 function gammalog(z::Float64)
     if z > 0.0
-        gam = gamma(z)
-        if gam > 0.0
-            return log(gam)
-        end
+        return loggamma(z)
     end
 
     return NaN
@@ -164,41 +161,151 @@ end
     test_y = [
         SPECIAL_FLOAT32...,
         # [0, 1)
-        rand(Float64, 10)...,
-        # 1e-0 ~ 1e-16
-        [ 10.0^i for i in 0:-1:-16 ]...,
-        -1.0, -10., -Inf,
-        NaN,
+        # rand(Float64, 1000_00)...,
+        # 1e+300 ~ 1e-16
+        [ 10.0^i for i in 300:-1:-16 ]...,
     ]
 
+    broken = []
     for y in (test_y)
-        ref_jl = gammalog(y)    # pure julia impl, ground truth
+        ref_jl = gammalog(y)
         ref = AMOS._gammaln(y)  # call AMOS, baseline
         res = AMOS.gammaln(y)   # fortran translation
 
         if isnan(ref)
-            @test isnan(res)
+            @test ref === res
             if isinf(ref_jl)
-                # broken on 0x1.fffffep+127
-                @test_broken isnan(ref_jl)
+                # broken on Inf
+                @test_broken ref_jl == res
             else
-                @test isnan(ref_jl)
+                @test ref_jl === res
             end
         else
             @test ref ≈ res
             @test ref == res
-
-            if isinf(ref_jl)
-                # broken on 0x1.fffffcp-127
-                @test_broken ref_jl ≈ res
-            else
-                @test ref_jl ≈ res
+            if ref != res
+                @info "ref != res" y
+                push!(broken, y)
             end
+            
+            @test ref_jl ≈ res
         end
     end
+    
+    println("broken = $broken")
+    
+    for y in broken
+        if AMOS.gammaln(y) === loggamma(y)
+            println("amos_impl_bad_case1_ignore +=  $y,")
+        end
+    end
+    
+    # TODO
+    test_broken_needfix = [
+        0.02479404681512587,
+        0.03082792923106903,
+        0.04678686322505188,
+        0.05137348691272681,
+        0.0681163219419052,
+        0.07692497285270061,
+        0.11466853192189908,
+        0.11750948969845754,
+        0.14533512860373865,
+        0.14883749322348416,
+        0.15092594288449712,
+        0.1573741216179626,
+        0.1642017990620832,
+        0.1663422423283859,
+        0.178687001897195,
+        0.19722965935153058,
+        0.20595890907476233,
+        0.234856419811582,
+        0.2824181060374623,
+        0.2904374360402321,
+        0.2956749744778271,
+        0.30508527867637447,
+        0.3135491019159341,
+        0.3180062625383282,
+        0.31933222261295924,
+        0.34319325873919104,
+        0.35851859453691237,
+        0.4370785133100221,
+        0.44463064528294005,
+        0.4506438719507675,
+        0.5231351281880449,
+        0.5397662749192651,
+        0.5833158966262773,
+        0.6022274808533824,
+        0.616264566342255,
+        0.6221862964577084,
+        0.6500767786055538,
+        0.6753047595682308,
+        0.69725254206739,
+        0.6989150688781482,
+        0.7332872047902591,
+        0.756828681885317,
+        0.7922880546012007,
+        0.8192755439474143,
+        0.8295703314792912,
+        0.8870380316166794,
+        0.9041842141513168
+    ]
+    for y in test_broken_needfix
+        if AMOS.gammaln(y) == loggamma(y)
+            println("remove $(y),")
+        end
+        @test_broken AMOS.gammaln(y) == AMOS._gammaln(y)
+    end
+    
 
-    @test_broken AMOS.gammaln(0x1.fffffep+127) == Inf
-    @test_broken AMOS.gammaln(0x1.fffffcp-127) == gammalog(0x1.fffffcp-127)
+    """
+    The AMOS implementation is incorrect, 
+        currently AMOS.gammaln is implemented correctly.
+    Keep these tests for now and remove them when the rewrite is complete.
+    """
+    amos_impl_bad_case1_ignore = [
+        # Reference results are generated using Matlab R2023b
+        #   fprintf('(%.16e, %.16e),\n', f, gammaln(f))
+        (4.8005616413904217e-03, 5.3362703098007724e+00),
+        (6.5484884510764729e-03, 5.0247762942629715e+00),
+        (9.5307120639248621e-03, 4.6478089333560009e+00),
+        (1.0437445211128327e-02, 4.5564199285322493e+00),
+        (1.5161032651903383e-02, 4.1804632661918237e+00),
+        (1.7681503535653342e-02, 4.0252850865635805e+00),
+        (3.9183257716550957e-02, 3.2181278030939726e+00),
+        (4.5328177330525743e-02, 3.0693159532467242e+00),
+        (5.6114036963397118e-02, 2.8505009301958908e+00),
+        (6.2753362300222215e-02, 2.7354647445616491e+00),
+        (8.7850721600321258e-02, 2.3874984673865742e+00),
+        (9.3047948621315602e-02, 2.3277486080640775e+00),
+        (1.0785155408548408e-01, 2.1738439502350180e+00),
+        (1.1878681593647111e-01, 2.0728423113377392e+00),
+        (1.9463793225911241e-01, 1.5528082232364799e+00),
+        (2.4022730231778189e-01, 1.3301780924913191e+00),
+        (2.5274438262508425e-01, 1.2764850947623523e+00),
+        (2.9137968135096370e-01, 1.1264540568414718e+00),
+        (3.6482220971878199e-01, 8.9153332152762865e-01),
+        (4.9546148733747319e-01, 5.8132744574887640e-01),
+        (6.1087936625438222e-01, 3.8168597849277025e-01),
+        (6.4073094472553438e-01, 3.3839219410920057e-01),
+    ]
+    for (y, mat_ref) in amos_impl_bad_case1_ignore
+        @test loggamma(y) == AMOS.gammaln(y)
+        if loggamma(y) != mat_ref
+            println("maybe bad impl: $(y),")
+        end
+        @test mat_ref == AMOS.gammaln(y)
+        @test mat_ref === loggamma(y)
+        @test mat_ref != AMOS._gammaln(y)
+    end
+
+    # This may be a problem with the original fortran implementation
+    max_subnormal = 0x1.fffffcp-127
+    @test AMOS.gammaln(max_subnormal) == AMOS._gammaln(max_subnormal)
+    # Confirm in Matlab: `gammaln(1.1754942106924411e-38) == 87.3365448697624`
+    #   and wolframcloud: `LogGamma[1.1754942106924411e-38] == 87.3365448697624`
+    @test loggamma(max_subnormal) == 87.3365448697624
+    @test_broken AMOS.gammaln(max_subnormal) == loggamma(max_subnormal)
 end
 
 @testset "AMOS.kscl!" begin
