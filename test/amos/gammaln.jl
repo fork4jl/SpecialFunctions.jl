@@ -96,7 +96,7 @@ end
     The inconsistency between the julia implementation and the loggamma output will be 
         investigated further after the rewrite is complete.
     """
-    test_broken_wontfix = [
+    test_wontfix_in_rewrite = [
         # err: last step: log(zp)
         0.02479404681512587,
         # err: tlg = log(zdmy);
@@ -108,7 +108,7 @@ end
         # err: tlg = log(zdmy);
         0.9041842141513168
     ]
-    for y in test_broken_wontfix
+    for y in test_wontfix_in_rewrite
         # Won't fix
         @test AMOS._gammaln(y) !== AMOS.gammaln(y)
         @test AMOS._gammaln(y) ≈ AMOS._gammaln(y)
@@ -118,11 +118,31 @@ end
     end
 
     """
+    The current impl matches the output of the fortran reference impl.
+
+    However, it does not matches the output of Matlab.
+    """
+    test_after_rewrite_todo = [
+        # Max Subnormal
+        # Confirm with Matlab: `gammaln(1.1754942106924411e-38) == 87.3365448697624`
+        #   and wolframcloud: `LogGamma[1.1754942106924411e-38] == 87.3365448697624`
+        (0x1.fffffcp-127, 8.7336544869762406e+01),
+    ]
+    for (y, mat_ref) in test_after_rewrite_todo
+        # Match Fortran Ref impl
+        @test AMOS._gammaln(y) === AMOS.gammaln(y)
+        @test mat_ref === loggamma(y)
+        @test mat_ref ≈ AMOS._gammaln(y)
+        # TODO: fix after rewrite
+        @test_broken mat_ref === AMOS._gammaln(y)
+    end
+
+    """
     The AMOS implementation is incorrect, 
         currently AMOS.gammaln is implemented correctly.
     Keep these tests for now and remove them when the rewrite is complete.
     """
-    amos_impl_bad_case1_ignore = [
+    test_remove_after_rewrite = [
         # Reference results are generated using Matlab R2023b
         #   fprintf('(%.16e, %.16e),\n', f, gammaln(f))
         (4.8005616413904217e-03, 5.3362703098007724e+00),
@@ -148,7 +168,7 @@ end
         (6.1087936625438222e-01, 3.8168597849277025e-01),
         (6.4073094472553438e-01, 3.3839219410920057e-01),
     ]
-    for (y, mat_ref) in amos_impl_bad_case1_ignore
+    for (y, mat_ref) in test_remove_after_rewrite
         @test mat_ref === AMOS.gammaln(y)
         @test mat_ref === loggamma(y)
         # Won't fix
@@ -156,11 +176,4 @@ end
         @test mat_ref ≈ AMOS._gammaln(y)
     end
 
-    # This may be a problem with the original fortran implementation
-    max_subnormal = 0x1.fffffcp-127
-    @test AMOS.gammaln(max_subnormal) == AMOS._gammaln(max_subnormal)
-    # Confirm in Matlab: `gammaln(1.1754942106924411e-38) == 87.3365448697624`
-    #   and wolframcloud: `LogGamma[1.1754942106924411e-38] == 87.3365448697624`
-    @test loggamma(max_subnormal) == 87.3365448697624
-    @test_broken AMOS.gammaln(max_subnormal) == loggamma(max_subnormal)
 end
