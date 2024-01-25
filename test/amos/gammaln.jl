@@ -8,8 +8,6 @@ function gammalog(z::Float64)
     return NaN
 end
 
-const LIMIT = 1e+0
-
 @testset "AMOS.gammaln" begin
     special_inputs = Float64[
         #= if z > 0.0 =#
@@ -43,23 +41,13 @@ const LIMIT = 1e+0
     for z in special_inputs
         @test AMOS.gammaln(z) === AMOS._gammaln(z)
     end
-    
-    # [0, 1)
-    rnd_f = rand(Float64, 1000_000)
-    rnd_f = rnd_f .* (LIMIT*10.0)
-    rnd_f = rnd_f
 
     test_y = [
         SPECIAL_FLOAT32...,
-        # rnd_f...,
         # 1e+300 ~ 1e-16
         [ 10.0^i for i in 300:-1:-16 ]...,
     ]
 
-    broken = []
-    test_after_rewrite_todo = []
-    test_remove_after_rewrite = []
-    test_wontfix_in_rewrite = []
     for y in (test_y)
         ref_jl = gammalog(y)
         ref = AMOS._gammaln(y)  # call AMOS, baseline
@@ -78,58 +66,11 @@ const LIMIT = 1e+0
             if !isapprox(ref, res)
                 @warn y
             end
-            
-            if isapprox(ref, res)
-                if ref == res
-                    if AMOS.gammaln(y) != loggamma(y)
-                        y<=LIMIT && continue
-                        push!(test_after_rewrite_todo, y)
-                    end
-                    continue
-                end
-                # ref ≈ res
-                if AMOS.gammaln(y) === loggamma(y)
-                    # ref ≈ res === loggamma
-                    y<=LIMIT && continue
-                    push!(test_remove_after_rewrite, y)
-                else
-                    # ref ≈ res !== loggamma
-                    y<=LIMIT && continue
-                    push!(test_wontfix_in_rewrite, y)
-                end
-            else # ref !≈ res
-                if AMOS.gammaln(y) === loggamma(y)
-                    # ref != res === loggamma
-                    y<=LIMIT && continue
-                    push!(test_remove_after_rewrite, y)
-                else
-                    # res != ref != loggamma
-                    y<=LIMIT && continue
-                    push!(broken, y)
-                end
-            end
-            
-            
-            # @test ref == res
-            # if ref != res
-            #     push!(broken, y)
-            # end
-            
-            # @test ref_jl ≈ res
-            # if ref_jl !== res
-            #     push!(broken, y)
-            # end
+
+            @test ref == res
+            @test ref_jl ≈ res
         end
     end
-
-    len_rewrite = min(length(test_wontfix_in_rewrite), 10)
-    println("test_wontfix_in_rewrite    = $(sort(test_wontfix_in_rewrite)[1:len_rewrite])\n")
-    len_rewrite = min(length(test_after_rewrite_todo), 10)
-    println("test_after_rewrite_todo    = $(sort(test_after_rewrite_todo)[1:len_rewrite])\n")
-    len_rewrite = min(length(test_remove_after_rewrite), 10)
-    println("test_remove_after_rewrite  = $(sort(test_remove_after_rewrite)[1:len_rewrite])\n")
-    
-    println("\nbroken    = $(sort(broken))\n")
 
     """
     The output of these tests is inconsistent on all three implementations.
@@ -201,11 +142,14 @@ const LIMIT = 1e+0
     end
 
     """
-    The AMOS implementation is incorrect, 
-        currently AMOS.gammaln is implemented correctly.
+    The AMOS impl is not precise; current `AMOS.gammaln` impl is precise.
     Keep these tests for now and remove them when the rewrite is complete.
     """
     test_remove_after_rewrite = [
+        # Reference results are generated using Matlab R2023b
+        #   fprintf('(%.16e, %.16e),\n', f, gammaln(f))
+        #
+        # ( input_y, reference_output ),
         (1.0938769749613498e-16, 3.6751633244559891e+01),
         (1.3528203464811494e-08, 1.8118489177381669e+01),
         (1.0443000379825174e-04, 9.1669332614365313e+00),
@@ -221,8 +165,6 @@ const LIMIT = 1e+0
         (4.5221368056396525e+256, 2.6679285261833809e+259),
         (3.4425072585673266e+300, 2.3788128892517655e+303),
         
-        # Reference results are generated using Matlab R2023b
-        #   fprintf('(%.16e, %.16e),\n', f, gammaln(f))
         (4.8005616413904217e-03, 5.3362703098007724e+00),
         (6.5484884510764729e-03, 5.0247762942629715e+00),
         (9.5307120639248621e-03, 4.6478089333560009e+00),
@@ -248,7 +190,7 @@ const LIMIT = 1e+0
     ]
     for (y, mat_ref) in test_remove_after_rewrite
         @test mat_ref === AMOS.gammaln(y)
-        # Won't fix
+        # Won't fix: AMOS impl is not precise
         @test mat_ref !== AMOS._gammaln(y)
         @test mat_ref ≈ AMOS._gammaln(y)
     end
