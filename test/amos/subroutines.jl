@@ -199,64 +199,37 @@ end
             println("amos_impl_bad_case1_ignore +=  $y,")
         end
     end
-    
-    # TODO
-    test_broken_needfix = [
+
+    """
+    The output of these tests is inconsistent on all three implementations.
+
+    The inconsistency between the julia impl (`AMOS.gammaln`) and the fortran 
+        reference impl (`AMOS._gammaln`) has been analyzed and determined to be a flaw 
+        in the libm library used by the fortran reference impl.
+    Specifically, this is due to inaccuracies in the output of the log function in libm.
+        Therefore these tests will not be fixed by this rewrite.
+
+    The inconsistency between the julia implementation and the loggamma output will be 
+        investigated further after the rewrite is complete.
+    """
+    test_broken_wontfix = [
+        # err: last step: log(zp)
         0.02479404681512587,
-        0.03082792923106903,
-        0.04678686322505188,
-        0.05137348691272681,
-        0.0681163219419052,
-        0.07692497285270061,
+        # err: tlg = log(zdmy);
         0.11466853192189908,
-        0.11750948969845754,
-        0.14533512860373865,
-        0.14883749322348416,
-        0.15092594288449712,
-        0.1573741216179626,
-        0.1642017990620832,
-        0.1663422423283859,
-        0.178687001897195,
-        0.19722965935153058,
+        # err: tlg = log(zdmy);
         0.20595890907476233,
-        0.234856419811582,
-        0.2824181060374623,
-        0.2904374360402321,
-        0.2956749744778271,
+        # err: tlg = log(zdmy);
         0.30508527867637447,
-        0.3135491019159341,
-        0.3180062625383282,
-        0.31933222261295924,
-        0.34319325873919104,
-        0.35851859453691237,
-        0.4370785133100221,
-        0.44463064528294005,
-        0.4506438719507675,
-        0.5231351281880449,
-        0.5397662749192651,
-        0.5833158966262773,
-        0.6022274808533824,
-        0.616264566342255,
-        0.6221862964577084,
-        0.6500767786055538,
-        0.6753047595682308,
-        0.69725254206739,
-        0.6989150688781482,
-        0.7332872047902591,
-        0.756828681885317,
-        0.7922880546012007,
-        0.8192755439474143,
-        0.8295703314792912,
-        0.8870380316166794,
+        # err: tlg = log(zdmy);
         0.9041842141513168
     ]
-    for y in test_broken_needfix
-        if AMOS.gammaln(y) == loggamma(y)
-            println("remove $(y),")
-        end
-        @test_broken AMOS.gammaln(y) == AMOS._gammaln(y)
+    for y in test_broken_wontfix
+        # Won't fix
+        @test AMOS._gammaln(y) != AMOS.gammaln(y)
+        # TODO: fix after rewrite
+        @test_broken loggamma(y) == AMOS._gammaln(y)
     end
-    
 
     """
     The AMOS implementation is incorrect, 
