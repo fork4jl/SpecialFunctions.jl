@@ -13,7 +13,7 @@ end
         #= if z > 0.0 =#
         #  z <= 0.0
         -1.0, 0.0,
-    
+
         #  z > 0.0
         #= if z <= 101.0 =#
         #  z in Int(0, 100]
@@ -29,13 +29,13 @@ end
 
         #= if zp >= wdtol,  wdtol=2.2e-16 =#
         1e-16, 1e-10,
-        
+
         #= if 0.0 == zinc =#
         #  when z > zmin(=7.0), zinc=0
         8.1,
         π * 100,
         7 + rand()*10.0^rand(0:300),  # (7, 1e300]
-        #  when z in (0.0, 7.0], zinc != 0 
+        #  when z in (0.0, 7.0], zinc != 0
         rand() * 7,
     ]
     for z in special_inputs
@@ -75,42 +75,37 @@ end
     """
     The output of these tests is inconsistent on all three implementations.
 
-    The inconsistency between the julia impl (`AMOS.gammaln`) and the fortran 
-        reference impl (`AMOS._gammaln`) has been analyzed and determined to be a flaw 
+    The inconsistency between the julia impl (`AMOS.gammaln`) and the fortran
+        reference impl (`AMOS._gammaln`) has been analyzed and determined to be a flaw
         in the libm library used by the fortran reference impl.
     Specifically, this is due to inaccuracies in the output of the log function in libm.
         Therefore these tests will not be fixed by this rewrite.
 
-    The inconsistency between the julia implementation and the loggamma output will be 
+    The inconsistency between the julia implementation and the loggamma output will be
         investigated further after the rewrite is complete.
     """
     test_wontfix_in_rewrite = [
-        # 1.7140765668835524e-32, 3.6849089122574623e-32, 7.242450103024656e-32, 8.139437007248653e-32, 8.634324327322342e-32
-        
-        1.0030054521742426,
-        1.0122672144035993,
-        112.75345484474153,
-        12973.738146627067,
-        1.0136360389507192e8, 
-
         # err: last step: log(zp)
-        0.02479404681512587,
+        (1.7140765668835524e-32, 7.3143848485170963e+01),
+        (2.4794046815125870e-02, 3.6833397905797782e+00),
+
         # err: tlg = log(zdmy);
-        0.11466853192189908,
-        # err: tlg = log(zdmy);
-        0.20595890907476233,
-        # err: tlg = log(zdmy);
-        0.30508527867637447,
-        # err: tlg = log(zdmy);
-        0.9041842141513168
+        (1.1466853192189908e-01, 2.1097745674575785e+00),
+        (2.0595890907476233e-01, 1.4930045975739470e+00),
+        (3.0508527867637447e-01, 1.0781433866410493e+00),
+        (9.0418421415131678e-01, 6.3234254316328384e-02),
+        (1.0030054521742426e+00, -1.7273757975118590e-03),
+
+        # err: tlg = log(z);
+        (1.1275345484474153e+02, 4.1858665390175162e+02),
     ]
-    for y in test_wontfix_in_rewrite
+    for (y, mat_ref) in test_wontfix_in_rewrite
         # Won't fix
         @test AMOS._gammaln(y) !== AMOS.gammaln(y)
-        @test AMOS._gammaln(y) ≈ AMOS._gammaln(y)
+        @test AMOS._gammaln(y) ≈ AMOS.gammaln(y)
         # TODO: fix after rewrite
-        @test_broken loggamma(y) === AMOS.gammaln(y)
-        @test loggamma(y) ≈ AMOS.gammaln(y)
+        @test_broken mat_ref === AMOS.gammaln(y)
+        @test mat_ref ≈ AMOS.gammaln(y)
     end
 
     """
@@ -164,7 +159,7 @@ end
         (1.9336249168162124e+128, 5.6924039680253297e+130),
         (4.5221368056396525e+256, 2.6679285261833809e+259),
         (3.4425072585673266e+300, 2.3788128892517655e+303),
-        
+
         (4.8005616413904217e-03, 5.3362703098007724e+00),
         (6.5484884510764729e-03, 5.0247762942629715e+00),
         (9.5307120639248621e-03, 4.6478089333560009e+00),
