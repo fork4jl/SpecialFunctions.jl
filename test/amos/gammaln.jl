@@ -118,7 +118,7 @@ end
 
     However, it does not matches the output of Matlab.
     """
-    test_after_rewrite_todo = [
+    test_not_match_mat_todo = [
         (1.4012984643248171e-45, 1.0327892990343184e+02),
         # Max Subnormal: 0x1.fffffcp-127
         # Confirm with Matlab: `gammaln(1.1754942106924411e-38) == 87.3365448697624`
@@ -132,13 +132,13 @@ end
         (1.0000181598531222e+02, 3.5914255921250549e+02),
         (1.0000244355122401e+04, 8.2101968081058963e+04),
     ]
-    for (y, mat_ref) in test_after_rewrite_todo
+    for (y, mat_ref) in test_not_match_mat_todo
         # Match Fortran Ref impl
         @test AMOS._gammaln(y) === AMOS.gammaln(y)
-        @test mat_ref ≈ AMOS._gammaln(y)
+        # NOT match Matlab
         # TODO: fix after rewrite
         @test_broken mat_ref === AMOS.gammaln(y)
-        
+        @test mat_ref ≈ AMOS.gammaln(y)
     end
 
     """
