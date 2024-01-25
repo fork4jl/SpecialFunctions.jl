@@ -226,9 +226,11 @@ end
     ]
     for y in test_broken_wontfix
         # Won't fix
-        @test AMOS._gammaln(y) != AMOS.gammaln(y)
+        @test AMOS._gammaln(y) !== AMOS.gammaln(y)
+        @test AMOS._gammaln(y) ≈ AMOS._gammaln(y)
         # TODO: fix after rewrite
-        @test_broken loggamma(y) == AMOS._gammaln(y)
+        @test_broken loggamma(y) === AMOS._gammaln(y)
+        @test loggamma(y) ≈ AMOS._gammaln(y)
     end
 
     """
@@ -263,13 +265,11 @@ end
         (6.4073094472553438e-01, 3.3839219410920057e-01),
     ]
     for (y, mat_ref) in amos_impl_bad_case1_ignore
-        @test loggamma(y) == AMOS.gammaln(y)
-        if loggamma(y) != mat_ref
-            println("maybe bad impl: $(y),")
-        end
-        @test mat_ref == AMOS.gammaln(y)
+        @test mat_ref === AMOS.gammaln(y)
         @test mat_ref === loggamma(y)
-        @test mat_ref != AMOS._gammaln(y)
+        # Won't fix
+        @test mat_ref !== AMOS._gammaln(y)
+        @test mat_ref ≈ AMOS._gammaln(y)
     end
 
     # This may be a problem with the original fortran implementation
