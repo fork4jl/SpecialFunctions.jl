@@ -8,4 +8,4 @@ makedocs(modules=[SpecialFunctions],
                 "Overview" => "functions_overview.md",
                 "Reference" => "functions_list.md"])
 
-deploydocs(repo="github.com/JuliaMath/SpecialFunctions.jl.git")
+deploydocs(repo="github.com/inkydragon/SpecialFunctions.jl.git")
